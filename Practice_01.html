@@ -7,30 +7,51 @@
   </script>
 
   <style>
-  html, body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden;
-    background-color: #f0f0f0;  /* ← 背景色 */
-  }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #f5f5f5; /* 背景は明るめにして立体感を強調 */
+    }
 
-  model-viewer {
-    width: 100%;
-    height: 100vh;
-    background-color: #f0f0f0;  /* ← ここでもOK */
-  }
-</style>
-
+    model-viewer {
+      width: 100%;
+      height: 100vh;
+      background: transparent;
+    }
+  </style>
 </head>
 
 <body>
 
   <model-viewer
+    id="viewer"
     src="Practice_01.glb"
     alt="Practice Model"
     camera-controls
-    auto-rotate>
+    auto-rotate
+    exposure="1.1"
+    shadow-intensity="1">
   </model-viewer>
+
+  <script>
+    const viewer = document.getElementById("viewer");
+
+    viewer.addEventListener("load", () => {
+
+      const material = viewer.model.materials[0];
+
+      // 濃いグレー（立体感重視）
+      material.pbrMetallicRoughness.setBaseColorFactor([0.35, 0.35, 0.35, 1]);
+
+      // 少しだけ金属感
+      material.pbrMetallicRoughness.setMetallicFactor(0.25);
+
+      // テカりすぎない
+      material.pbrMetallicRoughness.setRoughnessFactor(0.55);
+
+    });
+  </script>
 
 </body>
 </html>
