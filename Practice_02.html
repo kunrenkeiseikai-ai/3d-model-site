@@ -1,79 +1,134 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>Practice 02 - Model Viewer</title>
+<meta charset="UTF-8">
+<title>Practice 02 - Grid Viewer</title>
 
-  <!-- model-viewer -->
-  <script type="module"
-    src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
-  </script>
+<style>
+  body {
+    margin: 0;
+    background-color: #f4f7fb;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
 
-  <style>
-    body {
-      margin: 0;
-      background-color: #f4f7fb; /* 教育向け：やわらかい薄青 */
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
+  header {
+    padding: 15px;
+    background-color: #2c3e50;
+    color: white;
+    font-size: 20px;
+  }
 
-    header {
-      padding: 15px;
-      background-color: #2c3e50; /* 落ち着いた濃紺 */
-      color: white;
-      font-size: 20px;
-    }
+  select {
+    margin: 15px;
+    padding: 8px 12px;
+    font-size: 16px;
+  }
 
-    select {
-      margin: 15px;
-      padding: 8px 12px;
-      font-size: 16px;
-    }
-
-    model-viewer {
-      width: 100%;
-      height: 80vh;
-      background-color: #e9eef5; /* 明るく視認性の良い背景 */
-    }
-  </style>
+  #container {
+    width: 100%;
+    height: 80vh;
+  }
+</style>
 </head>
 
 <body>
 
-  <header>3Dモデル表示（平行投影）</header>
+<header>3Dモデル表示（平行投影＋グリッド）</header>
 
-  <!-- プルダウン -->
-  <select id="modelSelector">
-    <option value="Practice_01.glb">practice_01</option>
-    <option value="Practice_02.glb">practice_02</option>
-  </select>
+<select id="modelSelector">
+  <option value="Practice_01.glb">Practice_01</option>
+  <option value="Practice_02.glb">Practice_02</option>
+</select>
 
-  <!-- モデル表示 -->
-  <model-viewer
-    id="viewer"
-    src="Practice_01.glb"
-    alt="3D Model"
-    camera-controls
-    interaction-prompt="none"
-    auto-rotate="false"
-    camera-projection="orthographic"
-    camera-target="0m 0m 0m"
-    camera-orbit="0deg 75deg 12m"
-    min-camera-orbit="auto auto 5m"
-    max-camera-orbit="auto auto 30m"
-    exposure="1"
-    shadow-intensity="1"
-  >
-  </model-viewer>
+<div id="container"></div>
 
-  <script>
-    const selector = document.getElementById("modelSelector");
-    const viewer = document.getElementById("viewer");
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
 
-    selector.addEventListener("change", function () {
-      viewer.src = this.value;
-    });
-  </script>
+const container = document.getElementById("container");
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xe9eef5);
+
+// ===== 平行投影カメラ =====
+const camera = new THREE.OrthographicCamera(
+  window.innerWidth / -80,
+  window.innerWidth / 80,
+  window.innerHeight / 80,
+  window.innerHeight / -80,
+  0.1,
+  1000
+);
+
+// 初期距離（約12m相当）
+camera.position.set(10, 10, 12);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
+container.appendChild(renderer.domElement);
+
+// ===== マウス操作 =====
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = false;
+controls.target.set(0, 0, 0);
+controls.update();
+
+// ===== グリッド =====
+const grid = new THREE.GridHelper(50, 50, 0x888888, 0xcccccc);
+scene.add(grid);
+
+// ===== ライト =====
+const light1 = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+scene.add(light1);
+
+const light2 = new THREE.DirectionalLight(0xffffff, 0.8);
+light2.position.set(10, 20, 10);
+scene.add(light2);
+
+// ===== モデル読み込み =====
+const loader = new GLTFLoader();
+let currentModel;
+
+function loadModel(path) {
+  if (currentModel) scene.remove(currentModel);
+
+  loader.load(path, function (gltf) {
+    currentModel = gltf.scene;
+    scene.add(currentModel);
+  });
+}
+
+// 初期表示
+loadModel("Practice_01.glb");
+
+// プルダウン切替
+document.getElementById("modelSelector").addEventListener("change", function () {
+  loadModel(this.value);
+});
+
+// ===== リサイズ対応 =====
+window.addEventListener("resize", () => {
+  camera.left = window.innerWidth / -80;
+  camera.right = window.innerWidth / 80;
+  camera.top = window.innerHeight / 80;
+  camera.bottom = window.innerHeight / -80;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
+});
+
+// ===== 描画ループ =====
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+</script>
 
 </body>
 </html>
