@@ -1,163 +1,82 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Practice 02 - Grid Viewer</title>
+  <meta charset="UTF-8">
+  <script type="module"
+    src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
+  </script>
 
-<style>
-  body {
-    margin: 0;
-    background-color: #f4f7fb;
-    font-family: Arial, sans-serif;
-    text-align: center;
-  }
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #f5f5f5;
+      font-family: sans-serif;
+    }
 
-  header {
-    padding: 15px;
-    background-color: #2c3e50;
-    color: white;
-    font-size: 20px;
-  }
+    .top-bar {
+      padding: 12px;
+      background: #2c3e50;
+      text-align: center;
+    }
 
-  select {
-    margin: 15px;
-    padding: 8px 12px;
-    font-size: 16px;
-  }
+    .top-bar select {
+      padding: 6px 12px;
+      font-size: 14px;
+    }
 
-  #container {
-    width: 100%;
-    height: 80vh;
-  }
-</style>
+    model-viewer {
+      width: 100%;
+      height: calc(100vh - 60px);
+
+      /* 🔷 グラデーション背景 */
+      background: linear-gradient(
+        to bottom,
+        #eef3f8 0%,
+        #d9e3f0 50%,
+        #c7d4e5 100%
+      );
+    }
+  </style>
 </head>
 
 <body>
 
-<header>3Dモデル表示（平行投影＋グリッド）</header>
+  <!-- 🔽 プルダウン -->
+  <div class="top-bar">
+    <select id="modelSelector">
+      <option value="Practice_01.glb">Practice 01</option>
+      <option value="Practice_02.glb">Practice 02</option>
+    </select>
+  </div>
 
-<select id="modelSelector">
-  <option value="Practice_01.glb">Practice_01</option>
-  <option value="Practice_02.glb">Practice_02</option>
-</select>
+  <!-- 3D表示 -->
+  <model-viewer
+    id="viewer"
+    src="Practice_01.glb"
+    camera-controls
+    auto-rotate
+    exposure="1.1"
+    shadow-intensity="1"
+    environment-image="neutral">
+  </model-viewer>
 
-<div id="container"></div>
+  <script>
+    const viewer = document.getElementById("viewer");
+    const selector = document.getElementById("modelSelector");
 
-<script type="module">
-import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
-import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+    selector.addEventListener("change", (event) => {
+      viewer.src = event.target.value;
+    });
 
-const container = document.getElementById("container");
+    viewer.addEventListener("load", () => {
+      const material = viewer.model.materials[0];
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xe9eef5);
-
-// ===== 安定版 平行投影カメラ =====
-const aspect = window.innerWidth / window.innerHeight;
-const frustumSize = 20;
-
-const camera = new THREE.OrthographicCamera(
-  -frustumSize * aspect / 2,
-   frustumSize * aspect / 2,
-   frustumSize / 2,
-  -frustumSize / 2,
-  0.1,
-  1000
-);
-
-camera.position.set(10, 10, 12);
-camera.lookAt(0, 0, 0);
-
-// ===== レンダラー =====
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
-container.appendChild(renderer.domElement);
-
-// ===== マウス操作 =====
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.autoRotate = false;
-controls.target.set(0, 0, 0);
-controls.update();
-
-// ===== グリッド =====
-const grid = new THREE.GridHelper(50, 50, 0x888888, 0xcccccc);
-scene.add(grid);
-
-// ===== ライト =====
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-scene.add(hemiLight);
-
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(10, 20, 10);
-scene.add(dirLight);
-
-// ===== モデル読み込み =====
-const loader = new GLTFLoader();
-let currentModel;
-
-function loadModel(path) {
-
-  if (currentModel) {
-    scene.remove(currentModel);
-  }
-
-  loader.load(
-    path,
-
-    function (gltf) {
-
-      currentModel = gltf.scene;
-
-      // ===== 原点補正 =====
-      const box = new THREE.Box3().setFromObject(currentModel);
-      const center = box.getCenter(new THREE.Vector3());
-      currentModel.position.sub(center);
-
-      scene.add(currentModel);
-    },
-
-    undefined,
-
-    function (error) {
-      console.error("モデル読み込みエラー:", error);
-    }
-  );
-}
-
-// 初期表示
-loadModel("Practice_01.glb");
-
-// ===== プルダウン切替 =====
-document.getElementById("modelSelector").addEventListener("change", function () {
-  loadModel(this.value);
-});
-
-// ===== リサイズ対応 =====
-window.addEventListener("resize", () => {
-
-  const aspect = window.innerWidth / window.innerHeight;
-
-  camera.left = -frustumSize * aspect / 2;
-  camera.right = frustumSize * aspect / 2;
-  camera.top = frustumSize / 2;
-  camera.bottom = -frustumSize / 2;
-
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
-});
-
-// ===== 描画ループ =====
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-
-animate();
-
-</script>
+      material.pbrMetallicRoughness.setBaseColorFactor([0.35, 0.35, 0.35, 1]);
+      material.pbrMetallicRoughness.setMetallicFactor(0.25);
+      material.pbrMetallicRoughness.setRoughnessFactor(0.55);
+    });
+  </script>
 
 </body>
 </html>
