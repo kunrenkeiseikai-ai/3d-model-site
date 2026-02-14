@@ -53,19 +53,23 @@ const container = document.getElementById("container");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xe9eef5);
 
-// ===== 平行投影カメラ =====
+// ===== 安定版 平行投影カメラ =====
+const aspect = window.innerWidth / window.innerHeight;
+const frustumSize = 20;
+
 const camera = new THREE.OrthographicCamera(
-  window.innerWidth / -80,
-  window.innerWidth / 80,
-  window.innerHeight / 80,
-  window.innerHeight / -80,
+  -frustumSize * aspect / 2,
+   frustumSize * aspect / 2,
+   frustumSize / 2,
+  -frustumSize / 2,
   0.1,
   1000
 );
 
-// 初期距離（約12m相当）
 camera.position.set(10, 10, 12);
+camera.lookAt(0, 0, 0);
 
+// ===== レンダラー =====
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
 container.appendChild(renderer.domElement);
@@ -82,40 +86,64 @@ const grid = new THREE.GridHelper(50, 50, 0x888888, 0xcccccc);
 scene.add(grid);
 
 // ===== ライト =====
-const light1 = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-scene.add(light1);
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+scene.add(hemiLight);
 
-const light2 = new THREE.DirectionalLight(0xffffff, 0.8);
-light2.position.set(10, 20, 10);
-scene.add(light2);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(10, 20, 10);
+scene.add(dirLight);
 
 // ===== モデル読み込み =====
 const loader = new GLTFLoader();
 let currentModel;
 
 function loadModel(path) {
-  if (currentModel) scene.remove(currentModel);
 
-  loader.load(path, function (gltf) {
-    currentModel = gltf.scene;
-    scene.add(currentModel);
-  });
+  if (currentModel) {
+    scene.remove(currentModel);
+  }
+
+  loader.load(
+    path,
+
+    function (gltf) {
+
+      currentModel = gltf.scene;
+
+      // ===== 原点補正 =====
+      const box = new THREE.Box3().setFromObject(currentModel);
+      const center = box.getCenter(new THREE.Vector3());
+      currentModel.position.sub(center);
+
+      scene.add(currentModel);
+    },
+
+    undefined,
+
+    function (error) {
+      console.error("モデル読み込みエラー:", error);
+    }
+  );
 }
 
 // 初期表示
 loadModel("Practice_01.glb");
 
-// プルダウン切替
+// ===== プルダウン切替 =====
 document.getElementById("modelSelector").addEventListener("change", function () {
   loadModel(this.value);
 });
 
 // ===== リサイズ対応 =====
 window.addEventListener("resize", () => {
-  camera.left = window.innerWidth / -80;
-  camera.right = window.innerWidth / 80;
-  camera.top = window.innerHeight / 80;
-  camera.bottom = window.innerHeight / -80;
+
+  const aspect = window.innerWidth / window.innerHeight;
+
+  camera.left = -frustumSize * aspect / 2;
+  camera.right = frustumSize * aspect / 2;
+  camera.top = frustumSize / 2;
+  camera.bottom = -frustumSize / 2;
+
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
 });
@@ -126,6 +154,7 @@ function animate() {
   controls.update();
   renderer.render(scene, camera);
 }
+
 animate();
 
 </script>
