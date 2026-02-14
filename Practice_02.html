@@ -29,7 +29,7 @@
 
 <body>
 
-  <!-- プルダウン -->
+  <!-- 🔽 プルダウン -->
   <div class="top-bar">
     <select id="modelSelector">
       <option value="Practice_01.glb">Practice 01</option>
@@ -42,16 +42,11 @@
     id="viewer"
     src="Practice_01.glb"
     camera-controls
-    interaction-prompt="none"
-    environment-image="neutral"
-    exposure="0.9"
-
-    camera-target="0m 0m 0m"
-    camera-orbit="45deg 75deg 8m"
-    min-camera-orbit="auto auto 6m"
-    max-camera-orbit="auto auto 12m"
-
-    camera-projection="orthographic">
+  interaction-prompt="none"
+  environment-image="neutral"
+  exposure="0.9"
+  camera-orbit="45deg 75deg 12m"
+  camera-projection="orthographic">
   </model-viewer>
 
   <script>
