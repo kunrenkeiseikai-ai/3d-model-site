@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script type="module"
+    src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
+  </script>
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #f5f5f5;
+      font-family: sans-serif;
+    }
+
+    .top-bar {
+      padding: 10px;
+      background: #e0e0e0;
+      text-align: center;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: calc(100vh - 50px);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 🔽 プルダウン -->
+  <div class="top-bar">
+    <select id="modelSelector">
+      <option value="Full_Foot.glb">Full Foot</option>
+      <option value="Full_Hand.glb">Full Hand</option>
+    </select>
+  </div>
+
+  <!-- 3D表示 -->
+  <model-viewer
+    id="viewer"
+    src="Full_Foot.glb"
+    camera-controls
+    auto-rotate
+    exposure="1.1"
+    shadow-intensity="1"
+    environment-image="neutral">
+  </model-viewer>
+
+  <script>
+    const viewer = document.getElementById("viewer");
+    const selector = document.getElementById("modelSelector");
+
+    // モデル切替
+    selector.addEventListener("change", (event) => {
+      viewer.src = event.target.value;
+    });
+
+    // 読み込み後に色調整
+    viewer.addEventListener("load", () => {
+      const material = viewer.model.materials[0];
+
+      material.pbrMetallicRoughness.setBaseColorFactor([0.35, 0.35, 0.35, 1]);
+      material.pbrMetallicRoughness.setMetallicFactor(0.25);
+      material.pbrMetallicRoughness.setRoughnessFactor(0.55);
+    });
+  </script>
+
+</body>
+</html>
